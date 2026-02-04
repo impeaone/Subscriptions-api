@@ -3,7 +3,7 @@ package main
 import (
 	"agrigation_api/internal/app"
 	"agrigation_api/pkg/config"
-	"agrigation_api/pkg/database/postgres"
+	"agrigation_api/pkg/database/migration"
 	"agrigation_api/pkg/logger/logger"
 	"agrigation_api/pkg/tools"
 	"fmt"
@@ -44,7 +44,7 @@ func main() {
 	logs := logger.NewLog(tools.GetEnv("CloudStorage_LOGGER", "INFO"))
 
 	// Инициализация Postgres
-	pgs, errPGS := postgres.InitPostgres()
+	pgs, errPGS := migration.InitRepository()
 	if errPGS != nil {
 		logs.Error(fmt.Sprintf("Ошибка инициализации PostgreSQL: %v", errPGS), logger.GetPlace())
 		return

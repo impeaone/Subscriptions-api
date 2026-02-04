@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func HealthCheck(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value("logger").(*logger.Log)
 
 	response := models.HealthResponse{
