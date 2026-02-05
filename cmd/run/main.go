@@ -31,12 +31,6 @@ import (
 
 	logger:
 	tools.GetEnv("CloudStorage_LOGGER", "INFO")
-
-	REDIS:
-	tools.GetEnv("REDIS_HOST", "localhost")
-	tools.GetEnvAsInt("REDIS_PORT", 6379)
-	tools.GetEnv("REDIS_PASSWORD", "")
-	rdsDB := tools.GetEnvAsInt("REDIS_DB", 0)
 */
 
 // @title Subscription Management API
