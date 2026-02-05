@@ -66,9 +66,10 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 		tools.WriteError(w, http.StatusNotFound, "Subscription not found")
 		return
 	}
+
+	tools.WriteJSON(w, http.StatusOK, subscription)
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription found successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
-	tools.WriteJSON(w, http.StatusOK, subscription)
 }
 
 // UpsertSubscription - CREATE/UPDATE: POST /subscriptions
@@ -129,9 +130,9 @@ func (h *Handler) UpsertSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tools.WriteJSON(w, http.StatusOK, subscription)
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription upsert successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
-	tools.WriteJSON(w, http.StatusOK, subscription)
 }
 
 // DeleteSubscription godoc
@@ -178,11 +179,11 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription delete successfully",
-		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
 	tools.WriteJSON(w, http.StatusOK, map[string]string{
 		"message": "Subscription deleted successfully",
 	})
+	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription delete successfully",
+		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
 }
 
 // ListUserSubscriptions godoc
@@ -228,9 +229,10 @@ func (h *Handler) ListUserSubscriptions(w http.ResponseWriter, r *http.Request) 
 		"subscriptions": subscriptions,
 		"currency":      "RUB",
 	}
+
+	tools.WriteJSON(w, http.StatusOK, response)
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: User list subscription found successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
-	tools.WriteJSON(w, http.StatusOK, response)
 }
 
 // CalculateTotalHandler - GET /subscriptions/total
@@ -322,7 +324,7 @@ func (h *Handler) CalculateTotalHandler(w http.ResponseWriter, r *http.Request) 
 		response.Filters.ServiceName = &req.ServiceName
 	}
 
+	tools.WriteJSON(w, http.StatusOK, response)
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: calculate total successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
-	tools.WriteJSON(w, http.StatusOK, response)
 }
