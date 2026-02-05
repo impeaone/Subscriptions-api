@@ -1,4 +1,4 @@
-package migration
+package repository
 
 import (
 	"agrigation_api/pkg/models"
@@ -16,6 +16,17 @@ type Repository struct {
 }
 
 func InitRepository() (*Repository, error) {
+	pool, err := InitPGPool()
+	if err != nil {
+		return nil, err
+	}
+	return &Repository{
+		pool: pool,
+	}, nil
+
+}
+
+func InitPGPool() (*pgxpool.Pool, error) {
 	pgUser := tools.GetEnv("PG_USER", "postgres")
 	pgPassword := tools.GetEnv("PG_PASSWORD", "postgres")
 	pgHost := tools.GetEnv("PG_HOST", "192.168.3.92")
@@ -25,42 +36,15 @@ func InitRepository() (*Repository, error) {
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", pgUser, pgPassword, pgHost, pgPort, pgDatabase)
 
 	pool, errPGX := pgxpool.New(context.Background(), connStr)
-	if errPGX != nil {
-		return nil, errPGX
-	}
 
-	if err := createTables(pool); err != nil {
+	if err := pool.Ping(context.Background()); err != nil {
 		return nil, err
 	}
 
-	return &Repository{
-		pool: pool,
-	}, nil
-
-}
-func createTables(pool *pgxpool.Pool) error {
-	if _, err := pool.Exec(context.Background(), `
-		CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-		CREATE TABLE IF NOT EXISTS subscriptions (
-    		user_id UUID NOT NULL,
-    		service_name VARCHAR(100) NOT NULL,
-    
-    		price INTEGER NOT NULL CHECK (price > 0),
-    		start_date VARCHAR(7) NOT NULL,
-    		end_date VARCHAR(7),
-    
-    		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    		
-    		PRIMARY KEY (user_id, service_name)
-		);
-		
-		CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
-		CREATE INDEX IF NOT EXISTS idx_subscriptions_service ON subscriptions(service_name);
-	`); err != nil {
-		return err
+	if errPGX != nil {
+		return nil, errPGX
 	}
-	return nil
+	return pool, nil
 }
 
 // UpsertSubscription - создать подписку

@@ -6,6 +6,7 @@ import (
 )
 
 // HealthResponse структура ответа для health check
+// @Description Health check response
 type HealthResponse struct {
 	Status    string    `json:"status" example:"ok"`
 	Timestamp time.Time `json:"timestamp" example:"2024-01-15T10:30:00Z"`
@@ -14,6 +15,7 @@ type HealthResponse struct {
 }
 
 // Subscription - подписка пользователя
+// @Description Subscription information
 type Subscription struct {
 	UserID      uuid.UUID `json:"user_id"`
 	ServiceName string    `json:"service_name"`
@@ -25,6 +27,7 @@ type Subscription struct {
 }
 
 // CreateOrUpdateRequest - запрос на создание/обновление
+// @Description Request to create or update a subscription
 type CreateOrUpdateRequest struct {
 	ServiceName string    `json:"service_name"`
 	Price       int       `json:"price"`
@@ -34,21 +37,17 @@ type CreateOrUpdateRequest struct {
 }
 
 // DeleteRequest - запрос на удаление
+// @Description Request to delete a subscription
 type DeleteRequest struct {
 	ServiceName string    `json:"service_name"`
 	UserID      uuid.UUID `json:"user_id"`
 }
 
 // ErrorResponse - ошибка API
+// @Description Error response
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message,omitempty"`
-}
-
-// ListResponse - ответ со списком
-type ListResponse struct {
-	Subscriptions []Subscription `json:"subscriptions"`
-	Total         int            `json:"total"`
 }
 
 // UserSubscriptionsResponse - подписки пользователя
@@ -60,6 +59,7 @@ type UserSubscriptionsResponse struct {
 }
 
 // CalculateTotalRequest - запрос для подсчета суммы
+// @Description Request to calculate total cost for a period
 type CalculateTotalRequest struct {
 	UserID      uuid.UUID `json:"user_id,omitempty"`      // опционально
 	ServiceName string    `json:"service_name,omitempty"` // опционально
@@ -68,6 +68,7 @@ type CalculateTotalRequest struct {
 }
 
 // CalculateTotalResponse - ответ для подсчета суммы
+// @Description Response with total cost calculation
 type CalculateTotalResponse struct {
 	Success  bool       `json:"success"`
 	Total    int        `json:"total"`

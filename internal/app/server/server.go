@@ -4,9 +4,9 @@ import (
 	"agrigation_api/internal/app/server/handlers"
 	"agrigation_api/internal/middleware"
 	"agrigation_api/pkg/config"
-	"agrigation_api/pkg/database/migration"
-	"agrigation_api/pkg/database/redis"
+	"agrigation_api/pkg/database/repository"
 	"agrigation_api/pkg/logger/logger"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"net/http"
 )
 
@@ -14,11 +14,10 @@ type Server struct {
 	Port     int
 	Logger   *logger.Log
 	Router   http.Handler
-	Postgres *migration.Repository
-	Redis    *redis.Redis
+	Postgres *repository.Repository
 }
 
-func NewServer(config *config.Config, logs *logger.Log, pgs *migration.Repository) *Server {
+func NewServer(config *config.Config, logs *logger.Log, pgs *repository.Repository) *Server {
 	port := config.Port
 
 	router := http.NewServeMux()
@@ -34,6 +33,13 @@ func NewServer(config *config.Config, logs *logger.Log, pgs *migration.Repositor
 
 	// health check
 	router.HandleFunc("GET /health", serverHandlers.HealthCheck)
+
+	// Swagger
+	router.Handle("GET /swagger/", httpSwagger.WrapHandler)
+	// Редирект с корня на Swagger UI
+	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/index.html", http.StatusFound)
+	})
 
 	// Middleware
 	loggerRouter := middleware.LoggerMiddleware(logs, router)

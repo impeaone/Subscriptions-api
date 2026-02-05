@@ -1,9 +1,11 @@
 package main
 
 import (
+	_ "agrigation_api/docs"
 	"agrigation_api/internal/app"
+	"agrigation_api/migrations"
 	"agrigation_api/pkg/config"
-	"agrigation_api/pkg/database/migration"
+	"agrigation_api/pkg/database/repository"
 	"agrigation_api/pkg/logger/logger"
 	"agrigation_api/pkg/tools"
 	"fmt"
@@ -36,6 +38,12 @@ import (
 	tools.GetEnv("REDIS_PASSWORD", "")
 	rdsDB := tools.GetEnvAsInt("REDIS_DB", 0)
 */
+
+// @title Subscription Management API
+// @version 1.0
+// @description API for managing user subscriptions with period-based calculations
+// @BasePath /api/v1
+// @schemes http
 func main() {
 	// Ограничение ресурсов
 	runtime.GOMAXPROCS(tools.GetEnvAsInt("NUM_CPU", runtime.NumCPU()))
@@ -43,22 +51,20 @@ func main() {
 	// Logger
 	logs := logger.NewLog(tools.GetEnv("CloudStorage_LOGGER", "INFO"))
 
+	// Migrate
+	if errMigrate := migrations.CheckAndCreateTables(); errMigrate != nil {
+		logs.Error("Error to init tables: "+errMigrate.Error(), logger.GetPlace())
+		return
+	}
+	logs.Info("Init Database successful", logger.GetPlace())
+
 	// Инициализация Postgres
-	pgs, errPGS := migration.InitRepository()
+	pgs, errPGS := repository.InitRepository()
 	if errPGS != nil {
 		logs.Error(fmt.Sprintf("Ошибка инициализации PostgreSQL: %v", errPGS), logger.GetPlace())
 		return
 	}
-	logs.Info("Успешная инициализация PostgreSQL", logger.GetPlace())
-
-	/*
-		rds, errRds := redis.NewRedis()
-		if errRds != nil {
-			logs.Error(fmt.Sprintf("Ошибка инициализации Redis: %v", errRds), logger.GetPlace())
-			return
-		}
-		logs.Info("Успешная инициализация Redis", logger.GetPlace())?
-	*/
+	logs.Info("Успешное подключение к PostgreSQL", logger.GetPlace())
 
 	// Инициализация конфига
 	conf, err := config.ReadConfig()
