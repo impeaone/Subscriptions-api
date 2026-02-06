@@ -1,4 +1,4 @@
-# Subscription Management API
+# ✨ Subscription Management API
 REST API для управления подписками пользователей с подсчётом расходов за период.
 
 ### Особенности
