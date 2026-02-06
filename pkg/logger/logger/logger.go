@@ -1,7 +1,7 @@
 package logger
 
 import (
-	consts "agrigation_api/pkg/Constants"
+	consts "agrigation_api/pkg/constants"
 	"log"
 	"os"
 	"runtime"

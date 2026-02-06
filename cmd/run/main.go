@@ -27,10 +27,10 @@ import (
 	tools.GetEnv("PG_PASSWORD", "postgres")
 	tools.GetEnv("PG_HOST", "localhost")
 	tools.GetEnvAsInt("PG_PORT", 5432)
-	tools.GetEnv("PG_DATABASE", "agrigations")
+	tools.GetEnv("PG_DATABASE", "aggregation")
 
 	logger:
-	tools.GetEnv("CloudStorage_LOGGER", "INFO")
+	tools.GetEnv("LOGGER", "INFO")
 */
 
 // @title Subscription Management API
@@ -43,7 +43,7 @@ func main() {
 	runtime.GOMAXPROCS(tools.GetEnvAsInt("NUM_CPU", runtime.NumCPU()))
 
 	// Logger
-	logs := logger.NewLog(tools.GetEnv("CloudStorage_LOGGER", "INFO"))
+	logs := logger.NewLog(tools.GetEnv("LOGGER", "INFO"))
 
 	// Migrate
 	if errMigrate := migrations.CheckAndCreateTables(); errMigrate != nil {

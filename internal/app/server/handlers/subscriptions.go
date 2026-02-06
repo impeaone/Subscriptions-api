@@ -4,10 +4,12 @@ import (
 	"agrigation_api/pkg/logger/logger"
 	"agrigation_api/pkg/models"
 	"agrigation_api/pkg/tools"
+	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 // GetSubscription - GET конкретной подписки: GET /subscriptions?user_id=xxx&service=yyy
@@ -53,6 +55,12 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	subscription, err := h.db.GetSubscription(r.Context(), userID, serviceName)
+	if err == sql.ErrNoRows {
+		h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: %v",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, "subscription does not exists"), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "subscription does not exists")
+		return
+	}
 	if err != nil {
 		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: %v",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())

@@ -6,9 +6,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"strconv"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repository struct {
@@ -29,9 +31,9 @@ func InitRepository() (*Repository, error) {
 func InitPGPool() (*pgxpool.Pool, error) {
 	pgUser := tools.GetEnv("PG_USER", "postgres")
 	pgPassword := tools.GetEnv("PG_PASSWORD", "postgres")
-	pgHost := tools.GetEnv("PG_HOST", "192.168.3.92")
+	pgHost := tools.GetEnv("PG_HOST", "localhost")
 	pgPort := tools.GetEnvAsInt("PG_PORT", 5432)
-	pgDatabase := tools.GetEnv("PG_DATABASE", "storage")
+	pgDatabase := tools.GetEnv("PG_DATABASE", "aggregation")
 
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", pgUser, pgPassword, pgHost, pgPort, pgDatabase)
 
@@ -118,11 +120,11 @@ func (r *Repository) GetSubscription(ctx context.Context, userID uuid.UUID, serv
 		&sub.UpdatedAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("get subscription: %w", err)
+		return nil, err
 	}
 
 	if endDate.Valid {
@@ -236,7 +238,7 @@ func (r *Repository) CalculateTotal(ctx context.Context, req models.CalculateTot
 	argNum++
 	query += " AND (end_date IS NULL OR end_date >= $" + strconv.Itoa(argNum) + ")"
 
-	args = append(args, endTime.Format("2006-01"), startTime.Format("2006-01"))
+	args = append(args, endTime.Format("01-2006"), startTime.Format("01-2006"))
 
 	var total int
 	err = r.pool.QueryRow(ctx, query, args...).Scan(&total)
