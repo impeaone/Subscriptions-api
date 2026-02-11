@@ -81,8 +81,8 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateSubscription - CREATE: POST /subscriptions
-// Создает новую подписку или обновляет существующую
-// UpsertSubscription godoc
+// Создает новую подписку
+// Create	Subscription godoc
 // @Summary Create a subscription
 // @Description Create new subscription
 // @Tags subscriptions
@@ -348,6 +348,20 @@ func (h *Handler) CalculateTotalHandler(w http.ResponseWriter, r *http.Request) 
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
 }
 
+// UpdateSubscription - Update: PUT /subscriptions
+// Обновляет существующую подписку
+// UpdateSubscription godoc
+// @Summary Update a subscription
+// @Description Create new subscription
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param subscription body models.CreateOrUpdateRequest true "Subscription data"
+// @Success 200 {object} models.Subscription
+// @Success 201 {object} models.Subscription
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /api/v1/subscriptions [put]
 func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "PUT" {
 		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user uses not allowed method",
