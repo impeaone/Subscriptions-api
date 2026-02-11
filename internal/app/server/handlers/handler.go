@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"agrigation_api/pkg/database/repository"
+	"agrigation_api/internal/database/repository"
 	"agrigation_api/pkg/logger/logger"
 )
 

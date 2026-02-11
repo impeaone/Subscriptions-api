@@ -6,6 +6,7 @@ import (
 	"agrigation_api/pkg/tools"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -37,7 +38,7 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 	userIDStr := query.Get("user_id")
-	serviceName := query.Get("service")
+	serviceName := query.Get("service_name")
 
 	if userIDStr == "" || serviceName == "" {
 		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request without needed params",
@@ -55,10 +56,10 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	subscription, err := h.db.GetSubscription(r.Context(), userID, serviceName)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: %v",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, "subscription does not exists"), logger.GetPlace())
-		tools.WriteError(w, http.StatusBadRequest, "subscription does not exists")
+		tools.WriteError(w, http.StatusNotFound, "subscription does not exists")
 		return
 	}
 	if err != nil {
@@ -138,7 +139,7 @@ func (h *Handler) UpsertSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tools.WriteJSON(w, http.StatusOK, subscription)
+	tools.WriteJSON(w, http.StatusCreated, subscription)
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription upsert successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
 }
@@ -180,6 +181,12 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := h.db.DeleteSubscription(r.Context(), req.UserID, req.ServiceName)
+	if errors.Is(err, errors.New("subscription not found")) {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription not found",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusNotFound, "Subscription not found")
+		return
+	}
 	if err != nil {
 		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: delete subscription error: %v",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())
@@ -187,7 +194,7 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tools.WriteJSON(w, http.StatusOK, map[string]string{
+	tools.WriteJSON(w, http.StatusNoContent, map[string]string{
 		"message": "Subscription deleted successfully",
 	})
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription delete successfully",

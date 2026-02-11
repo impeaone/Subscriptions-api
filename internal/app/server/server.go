@@ -2,19 +2,23 @@ package server
 
 import (
 	"agrigation_api/internal/app/server/handlers"
+	"agrigation_api/internal/database/repository"
 	"agrigation_api/internal/middleware"
 	"agrigation_api/pkg/config"
-	"agrigation_api/pkg/database/repository"
 	"agrigation_api/pkg/logger/logger"
+	"context"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"net/http"
+	"sync"
 )
 
 type Server struct {
-	Port     int
-	Logger   *logger.Log
-	Router   http.Handler
-	Postgres *repository.Repository
+	Port        int
+	Logger      *logger.Log
+	Router      http.Handler
+	Postgres    *repository.Repository
+	exitChan    chan struct{}
+	connections *sync.WaitGroup
 }
 
 func NewServer(config *config.Config, logs *logger.Log, pgs *repository.Repository) *Server {
@@ -41,13 +45,36 @@ func NewServer(config *config.Config, logs *logger.Log, pgs *repository.Reposito
 		http.Redirect(w, r, "/swagger/index.html", http.StatusFound)
 	})
 
+	exitChan := make(chan struct{})
 	// Middleware
-	loggerRouter := middleware.LoggerMiddleware(logs, router)
-	PanicsRouter := middleware.PanicMiddleware(loggerRouter, logs)
+	shutdownMiddleware := middleware.ShutdownMiddleware(exitChan, router)
+	loggerRouter := middleware.LoggerMiddleware(logs, shutdownMiddleware)
+	PanicsRouter := middleware.PanicMiddleware(logs, loggerRouter)
 
 	return &Server{
-		Port:   port,
-		Logger: logs,
-		Router: PanicsRouter,
+		Port:        port,
+		Logger:      logs,
+		Router:      PanicsRouter,
+		exitChan:    exitChan,
+		connections: &sync.WaitGroup{},
+	}
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	close(s.exitChan)
+
+	finished := make(chan struct{})
+	go func() {
+		s.connections.Wait()
+		close(finished)
+	}()
+
+	select {
+	case <-finished:
+		// Все операции завершилсь
+		return nil
+	case <-ctx.Done():
+		// Время истекло
+		return ctx.Err()
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"agrigation_api/pkg/tools"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,21 +32,21 @@ func InitRepository() (*Repository, error) {
 func InitPGPool() (*pgxpool.Pool, error) {
 	pgUser := tools.GetEnv("PG_USER", "postgres")
 	pgPassword := tools.GetEnv("PG_PASSWORD", "postgres")
-	pgHost := tools.GetEnv("PG_HOST", "localhost")
+	pgHost := tools.GetEnv("PG_HOST", "192.168.3.92")
 	pgPort := tools.GetEnvAsInt("PG_PORT", 5432)
-	pgDatabase := tools.GetEnv("PG_DATABASE", "aggregation")
+	pgDatabase := tools.GetEnv("PG_DATABASE", "storage")
 
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", pgUser, pgPassword, pgHost, pgPort, pgDatabase)
 
 	pool, errPGX := pgxpool.New(context.Background(), connStr)
+	if errPGX != nil {
+		return nil, errPGX
+	}
 
 	if err := pool.Ping(context.Background()); err != nil {
 		return nil, err
 	}
 
-	if errPGX != nil {
-		return nil, errPGX
-	}
 	return pool, nil
 }
 
@@ -120,7 +121,7 @@ func (r *Repository) GetSubscription(ctx context.Context, userID uuid.UUID, serv
 		&sub.UpdatedAt,
 	)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
@@ -247,4 +248,9 @@ func (r *Repository) CalculateTotal(ctx context.Context, req models.CalculateTot
 	}
 
 	return total, nil
+}
+
+func (r *Repository) CloseConnection() {
+	r.pool.Close()
+
 }

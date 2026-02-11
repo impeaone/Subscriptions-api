@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"agrigation_api/pkg/database/repository"
+	"agrigation_api/internal/database/repository"
 	"context"
 )
 
