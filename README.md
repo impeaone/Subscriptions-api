@@ -49,6 +49,7 @@ GET /api/v1/subscriptions/?user_id=<uuid>&service_name=<string>
 ### 2. Создать/Обновить подписку
 ```text
 POST /api/v1/subscriptions/
+PUT /api/v1/subscriptions/
 ```
 #### Создать новую подписку или обновить существующую.
 #### Тело запроса:
