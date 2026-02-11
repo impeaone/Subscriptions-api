@@ -8,9 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/google/uuid"
+	"net/http"
 )
 
 // GetSubscription - GET конкретной подписки: GET /subscriptions?user_id=xxx&service=yyy
@@ -28,7 +27,6 @@ import (
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/v1/subscriptions [get]
 func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
-	// TODO: logger надо
 	if r.Method != "GET" {
 		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user uses not allowed method",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
@@ -54,8 +52,7 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 		tools.WriteError(w, http.StatusBadRequest, "Invalid user ID")
 		return
 	}
-
-	subscription, err := h.db.GetSubscription(r.Context(), userID, serviceName)
+	subscription, err := h.serv.GetSubscription(r.Context(), userID, serviceName)
 	if errors.Is(err, sql.ErrNoRows) {
 		h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: %v",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, "subscription does not exists"), logger.GetPlace())
@@ -81,11 +78,11 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
 }
 
-// UpsertSubscription - CREATE/UPDATE: POST /subscriptions
+// CreateSubscription - CREATE: POST /subscriptions
 // Создает новую подписку или обновляет существующую
 // UpsertSubscription godoc
-// @Summary Create or update a subscription
-// @Description Create new subscription or update existing one (upsert operation)
+// @Summary Create a subscription
+// @Description Create new subscription
 // @Tags subscriptions
 // @Accept json
 // @Produce json
@@ -95,7 +92,7 @@ func (h *Handler) GetSubscription(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Router /api/v1/subscriptions [post]
-func (h *Handler) UpsertSubscription(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user uses not allowed method",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
@@ -131,7 +128,7 @@ func (h *Handler) UpsertSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	subscription, err := h.db.UpsertSubscription(r.Context(), req)
+	subscription, err := h.serv.CreateSubscription(r.Context(), req)
 	if err != nil {
 		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: upsert subscription error: %v",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())
@@ -180,7 +177,7 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.db.DeleteSubscription(r.Context(), req.UserID, req.ServiceName)
+	err := h.serv.DeleteSubscription(r.Context(), req.UserID, req.ServiceName)
 	if errors.Is(err, errors.New("subscription not found")) {
 		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription not found",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
@@ -231,7 +228,7 @@ func (h *Handler) ListUserSubscriptions(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	subscriptions, err := h.db.ListUserSubscriptions(r.Context(), userID)
+	subscriptions, err := h.serv.ListSubscriptions(r.Context(), userID)
 	if err != nil {
 		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: list subscriptions error",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
@@ -274,11 +271,25 @@ func (h *Handler) CalculateTotalHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	query := r.URL.Query()
+	startMonth, errStartMonth := tools.ParseMonthYear(query.Get("start_month"))
+	if errStartMonth != nil {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid start_month",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "start_month is required")
+		return
+	}
+	endMonth, errEnd := tools.ParseMonthYear(query.Get("end_month"))
+	if errEnd != nil {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid end_month",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "end_month is required")
+		return
+	}
 
 	// Парсим параметры из query string
 	req := models.CalculateTotalRequest{
-		StartMonth:  query.Get("start_month"),
-		EndMonth:    query.Get("end_month"),
+		StartMonth:  startMonth,
+		EndMonth:    endMonth,
 		ServiceName: query.Get("service_name"),
 	}
 
@@ -294,23 +305,8 @@ func (h *Handler) CalculateTotalHandler(w http.ResponseWriter, r *http.Request) 
 		req.UserID = userID
 	}
 
-	// Валидация обязательных полей
-	if req.StartMonth == "" {
-		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid start_month",
-			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
-		tools.WriteError(w, http.StatusBadRequest, "start_month is required")
-		return
-	}
-
-	if req.EndMonth == "" {
-		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid end_month",
-			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
-		tools.WriteError(w, http.StatusBadRequest, "end_month is required")
-		return
-	}
-
 	// Подсчет суммы
-	total, err := h.db.CalculateTotal(r.Context(), req)
+	total, err := h.serv.CalculateTotal(r.Context(), req)
 	if err != nil {
 		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: calculate total error: %v",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())

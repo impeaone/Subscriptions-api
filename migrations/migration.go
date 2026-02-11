@@ -1,14 +1,14 @@
 package migrations
 
 import (
-	"agrigation_api/internal/database/repository"
+	"agrigation_api/internal/database/postgres"
 	"context"
 )
 
 // CheckAndCreateTables - создание таблиц если их нет
 func CheckAndCreateTables() error {
 	// Проверяем, существует ли таблица subscriptions
-	db, err := repository.InitPGPool()
+	db, err := postgres.InitPGPool()
 	if err != nil {
 		return err
 	}
@@ -29,16 +29,15 @@ func CheckAndCreateTables() error {
 	if !tableExists {
 		_, err := db.Exec(context.Background(), `
             CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-            
             CREATE TABLE subscriptions (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 user_id UUID NOT NULL,
                 service_name VARCHAR(100) NOT NULL,
                 price INTEGER NOT NULL CHECK (price > 0),
-                start_date VARCHAR(7) NOT NULL,
-                end_date VARCHAR(7),
+                start_date DATE NOT NULL,
+                end_date DATE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (user_id, service_name)
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             
             CREATE INDEX idx_subscriptions_user ON subscriptions(user_id);

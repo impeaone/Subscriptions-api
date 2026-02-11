@@ -17,13 +17,13 @@ type HealthResponse struct {
 // Subscription - подписка пользователя
 // @Description Subscription information
 type Subscription struct {
-	UserID      uuid.UUID `json:"user_id"`
-	ServiceName string    `json:"service_name"`
-	Price       int       `json:"price"`
-	StartDate   string    `json:"start_date"`         // "07-2025"
-	EndDate     *string   `json:"end_date,omitempty"` // "12-2025" или null
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	UserID      uuid.UUID  `json:"user_id"`
+	ServiceName string     `json:"service_name"`
+	Price       int        `json:"price"`
+	StartDate   time.Time  `json:"start_date"`         // "07-2025"
+	EndDate     *time.Time `json:"end_date,omitempty"` // "12-2025" или null
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // CreateOrUpdateRequest - запрос на создание/обновление
@@ -63,8 +63,8 @@ type UserSubscriptionsResponse struct {
 type CalculateTotalRequest struct {
 	UserID      uuid.UUID `json:"user_id,omitempty"`      // опционально
 	ServiceName string    `json:"service_name,omitempty"` // опционально
-	StartMonth  string    `json:"start_month"`            // "01-2024" начало периода
-	EndMonth    string    `json:"end_month"`              // "12-2024" конец периода
+	StartMonth  time.Time `json:"start_month"`            // "01-2024" начало периода
+	EndMonth    time.Time `json:"end_month"`              // "12-2024" конец периода
 }
 
 // CalculateTotalResponse - ответ для подсчета суммы
@@ -78,8 +78,8 @@ type CalculateTotalResponse struct {
 }
 
 type PeriodInfo struct {
-	StartMonth string `json:"start_month"`
-	EndMonth   string `json:"end_month"`
+	StartMonth time.Time `json:"start_month"`
+	EndMonth   time.Time `json:"end_month"`
 }
 
 type FilterInfo struct {

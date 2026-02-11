@@ -4,6 +4,7 @@ import (
 	_ "agrigation_api/docs"
 	"agrigation_api/internal/app"
 	"agrigation_api/internal/database/repository"
+	"agrigation_api/internal/service"
 	"agrigation_api/migrations"
 	"agrigation_api/pkg/config"
 	"agrigation_api/pkg/logger/logger"
@@ -17,6 +18,9 @@ import (
 	"time"
 )
 
+/*
+TODO: Тесты; UpdateSubscription ручку; В CalculateTotal посмотреть пересечения и тд, проваерить там
+*/
 /*
 Требуемые переменные окружения (.env файл для Docker-compose):
 
@@ -65,6 +69,9 @@ func main() {
 	}
 	logs.Info("Успешное подключение к PostgreSQL", logger.GetPlace())
 
+	// Создаем сервис
+	subService := service.NewSubscriptionService(rep)
+
 	// Инициализация конфига
 	conf, err := config.ReadConfig()
 	if err != nil {
@@ -74,7 +81,7 @@ func main() {
 	logs.Info("Успешная инициализация конфига", logger.GetPlace())
 
 	// Инициализация сервера
-	application := app.NewApp(conf, logs, rep)
+	application := app.NewApp(conf, logs, subService)
 	go func() {
 		if errStart := application.Start(); errStart != nil {
 			logs.Error(fmt.Sprintf("Server Start error: %v", errStart), logger.GetPlace())

@@ -4,6 +4,7 @@ import (
 	"agrigation_api/internal/app/server/handlers"
 	"agrigation_api/internal/database/repository"
 	"agrigation_api/internal/middleware"
+	"agrigation_api/internal/service"
 	"agrigation_api/pkg/config"
 	"agrigation_api/pkg/logger/logger"
 	"context"
@@ -21,15 +22,15 @@ type Server struct {
 	connections *sync.WaitGroup
 }
 
-func NewServer(config *config.Config, logs *logger.Log, pgs *repository.Repository) *Server {
+func NewServer(config *config.Config, logs *logger.Log, service service.Subscriptions) *Server {
 	port := config.Port
 
 	router := http.NewServeMux()
-	serverHandlers := handlers.NewHandler(pgs, logs)
+	serverHandlers := handlers.NewHandler(service, logs)
 
 	// Crud-операции
 	router.HandleFunc("GET /api/v1/subscriptions/", serverHandlers.GetSubscription)
-	router.HandleFunc("POST /api/v1/subscriptions/", serverHandlers.UpsertSubscription)
+	router.HandleFunc("POST /api/v1/subscriptions/", serverHandlers.CreateSubscription)
 	router.HandleFunc("GET /api/v1/subscriptions/user/{id}", serverHandlers.ListUserSubscriptions)
 	router.HandleFunc("DELETE /api/v1/subscriptions/", serverHandlers.DeleteSubscription)
 
