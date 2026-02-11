@@ -124,9 +124,18 @@ subscription-api/
 │   │       │   ├── healthcheck.go         # Healthcheck роут 
 │   │       │   └── subscriptions.go       # Роуты для подписок
 │   │       └── app.go                     # обертка для http сервера
+│   ├── database/
+│   │   ├── postgres/
+│   │   |   ├── postgres.go                # Функции для работы с БД PostgreSQL
+│   │   |   └── subscriptions.go           # Кастомные ошибки от бд
+|   |   └── repository/
+│   │       └── repository.go              # Слой Repository
 │   ├── middleware/
 │   │   ├── loggerMiddleware.go            # Middleware для логирования запросов 
-│   │   └── panicMiddleware.go             # Middleware для отлова паник (критических ошибок)
+│   │   ├── panicMiddleware.go             # Middleware для отлова паник (критических ошибок)
+|   |   └── shutdown.go                    # Middleware для graceful shutdown
+│   └── service/
+|       └── service.go                     # Слой service
 ├── migrations/
 │   ├── migration.go                       # Простая миграция
 │   └── schema.sql                         # Схема миграции
@@ -135,9 +144,6 @@ subscription-api/
 │   │   └── config.go                      # Конфиг
 │   ├── constants/
 │   │   └── constants.go                   # Строковые константы
-│   ├── database/
-│   │   └── repository/
-│   │       └── postgres.go                # Функции для работы с БД PostgreSQL
 │   ├── logger/
 │   │   ├── logger/
 │   │   │   └── logger.go                  # Кастомный логгер
