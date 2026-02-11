@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"agrigation_api/internal/database/postgres"
 	"agrigation_api/pkg/logger/logger"
 	"agrigation_api/pkg/models"
 	"agrigation_api/pkg/tools"
@@ -9,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 )
 
@@ -129,15 +131,21 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	subscription, err := h.serv.CreateSubscription(r.Context(), req)
+	if errors.Is(err, postgres.SubscriptionAlreadyExist) {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: %v",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "Subscription already exists")
+		return
+	}
 	if err != nil {
-		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: upsert subscription error: %v",
+		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: %v",
 			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())
 		tools.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
 	tools.WriteJSON(w, http.StatusCreated, subscription)
-	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription upsert successfully",
+	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription create successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
 }
 
@@ -337,5 +345,60 @@ func (h *Handler) CalculateTotalHandler(w http.ResponseWriter, r *http.Request) 
 
 	tools.WriteJSON(w, http.StatusOK, response)
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: calculate total successfully",
+		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+}
+
+func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user uses not allowed method",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	var req models.CreateOrUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid json",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "Invalid JSON: "+err.Error())
+		return
+	}
+
+	// Валидация
+	if req.ServiceName == "" {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid service-name",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "service_name is required")
+		return
+	}
+	if req.Price <= 0 {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid price",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "price must be positive")
+		return
+	}
+	if req.StartDate == "" {
+		h.logs.Warning(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: user request with invalid start-date",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
+		tools.WriteError(w, http.StatusBadRequest, "start_date is required")
+		return
+	}
+
+	subscription, err := h.serv.UpdateSubscription(r.Context(), req)
+	if errors.Is(err, pgx.ErrNoRows) {
+		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: update subscription error: %v",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())
+		tools.WriteError(w, http.StatusNotFound, "Subscription not found")
+		return
+	}
+	if err != nil {
+		h.logs.Error(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: update subscription error: %v",
+			r.RemoteAddr, r.URL, r.Method, logger.TimeFormat, err), logger.GetPlace())
+		tools.WriteError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	tools.WriteJSON(w, http.StatusCreated, subscription)
+	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: subscription update successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())
 }

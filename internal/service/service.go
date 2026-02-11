@@ -9,6 +9,7 @@ import (
 
 type Subscriptions interface {
 	CreateSubscription(context.Context, models.CreateOrUpdateRequest) (*models.Subscription, error)
+	UpdateSubscription(context.Context, models.CreateOrUpdateRequest) (*models.Subscription, error)
 	GetSubscription(context.Context, uuid.UUID, string) (*models.Subscription, error)
 	DeleteSubscription(context.Context, uuid.UUID, string) error
 	ListSubscriptions(context.Context, uuid.UUID) ([]models.Subscription, error)
@@ -25,6 +26,10 @@ func NewSubscriptionService(rep repository.Repository) *SubscriptionService {
 
 func (s *SubscriptionService) CreateSubscription(ctx context.Context, req models.CreateOrUpdateRequest) (*models.Subscription, error) {
 	return s.rep.CreateSubscription(ctx, req)
+}
+
+func (s *SubscriptionService) UpdateSubscription(ctx context.Context, req models.CreateOrUpdateRequest) (*models.Subscription, error) {
+	return s.rep.UpdateSubscription(ctx, req)
 }
 
 func (s *SubscriptionService) GetSubscription(ctx context.Context, req uuid.UUID, name string) (*models.Subscription, error) {

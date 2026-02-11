@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"strconv"
 	"time"
@@ -92,9 +93,68 @@ func (r *Repository) CreateSubscription(ctx context.Context, req models.CreateOr
 		&sub.CreatedAt,
 		&sub.UpdatedAt,
 	)
-
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == "23505" {
+			return nil, SubscriptionAlreadyExist
+		}
+	}
 	if err != nil {
-		return nil, fmt.Errorf("upsert subscription: %w", err)
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	if endDate.Valid {
+		*sub.EndDate, _ = time.Parse("01-2006", endDate.String)
+	}
+
+	return &sub, nil
+}
+
+func (r *Repository) UpdateSubscription(ctx context.Context, req models.CreateOrUpdateRequest) (*models.Subscription, error) {
+	query := `
+    UPDATE subscriptions 
+    SET price = $3, start_date = $4, end_date = $5 where user_id = $1 and service_name = $2
+    RETURNING user_id, service_name, price, start_date, end_date, created_at, updated_at`
+
+	var sub models.Subscription
+	var endDate sql.NullString
+
+	var endDateVal interface{}
+	if req.EndDate == "" {
+		endDateVal = nil
+	} else {
+		endDateVal = req.EndDate
+	}
+	var end *time.Time = nil
+	if endDateVal != nil {
+		*end, _ = tools.ParseMonthYear(req.EndDate)
+	}
+
+	start, errSt := tools.ParseMonthYear(req.StartDate)
+	if errSt != nil {
+		return nil, errSt
+	}
+
+	err := r.pool.QueryRow(ctx, query,
+		req.UserID,
+		req.ServiceName,
+		req.Price,
+		start,
+		end,
+	).Scan(
+		&sub.UserID,
+		&sub.ServiceName,
+		&sub.Price,
+		&sub.StartDate,
+		&endDate,
+		&sub.CreatedAt,
+		&sub.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, pgx.ErrNoRows
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	if endDate.Valid {
@@ -130,10 +190,7 @@ func (r *Repository) GetSubscription(ctx context.Context, userID uuid.UUID, serv
 	if err != nil {
 		return nil, err
 	}
-	/*
-		if endDate.Valid {
-			sub.EndDate = &endDate.String
-		}*/
+
 	if endDate.Valid {
 		*sub.EndDate, _ = time.Parse("01-2006", endDate.String)
 	}
@@ -147,11 +204,11 @@ func (r *Repository) DeleteSubscription(ctx context.Context, userID uuid.UUID, s
 
 	result, err := r.pool.Exec(ctx, query, userID, serviceName)
 	if err != nil {
-		return fmt.Errorf("delete subscription: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 
 	if rows := result.RowsAffected(); rows == 0 {
-		return fmt.Errorf("subscription not found")
+		return SubscriptionNotFound
 	}
 
 	return nil
@@ -167,7 +224,7 @@ func (r *Repository) ListUserSubscriptions(ctx context.Context, userID uuid.UUID
 
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("list user subscriptions: %w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 	defer rows.Close()
 
@@ -186,7 +243,7 @@ func (r *Repository) ListUserSubscriptions(ctx context.Context, userID uuid.UUID
 			&sub.UpdatedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("scan subscription: %w", err)
+			return nil, fmt.Errorf("%w", err)
 		}
 		/*
 			if endDate.Valid {
@@ -204,7 +261,7 @@ func (r *Repository) ListUserSubscriptions(ctx context.Context, userID uuid.UUID
 
 func (r *Repository) CalculateTotal(ctx context.Context, req models.CalculateTotalRequest) (int, error) {
 	if req.StartMonth.After(req.EndMonth) {
-		return 0, fmt.Errorf("start_month must be before end_month")
+		return 0, SubscriptionDateError
 	}
 
 	// Строим запрос
@@ -244,7 +301,7 @@ func (r *Repository) CalculateTotal(ctx context.Context, req models.CalculateTot
 	err := r.pool.QueryRow(ctx, query, args...).Scan(&total)
 	if err != nil {
 		fmt.Println(req)
-		return 0, fmt.Errorf("calculate total: %w", err)
+		return 0, fmt.Errorf("%w", err)
 	}
 
 	return total, nil

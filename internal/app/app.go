@@ -4,6 +4,7 @@ import (
 	"agrigation_api/internal/app/server"
 	"agrigation_api/internal/service"
 	"agrigation_api/pkg/config"
+	logger2 "agrigation_api/pkg/logger"
 	"agrigation_api/pkg/logger/logger"
 	"context"
 	"fmt"
@@ -14,7 +15,7 @@ type App struct {
 	fileServer *server.Server
 }
 
-func NewApp(config *config.Config, logger *logger.Log, service service.Subscriptions) *App {
+func NewApp(config *config.Config, logger logger2.MyLogger, service service.Subscriptions) *App {
 	fileServer := server.NewServer(config, logger, service)
 	return &App{
 		fileServer: fileServer,

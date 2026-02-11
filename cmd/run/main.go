@@ -7,6 +7,7 @@ import (
 	"agrigation_api/internal/service"
 	"agrigation_api/migrations"
 	"agrigation_api/pkg/config"
+	logger2 "agrigation_api/pkg/logger"
 	"agrigation_api/pkg/logger/logger"
 	"agrigation_api/pkg/tools"
 	"context"
@@ -19,7 +20,7 @@ import (
 )
 
 /*
-TODO: Тесты; UpdateSubscription ручку; В CalculateTotal посмотреть пересечения и тд, проваерить там
+TODO: Тесты; В CalculateTotal посмотреть пересечения и тд, проваерить там
 */
 /*
 Требуемые переменные окружения (.env файл для Docker-compose):
@@ -52,7 +53,7 @@ func main() {
 	runtime.GOMAXPROCS(tools.GetEnvAsInt("NUM_CPU", runtime.NumCPU()))
 
 	// Logger
-	logs := logger.NewLog(tools.GetEnv("LOGGER", "INFO"))
+	logs := logger2.NewMyLogger(tools.GetEnv("LOGGER", "INFO"))
 
 	// Migrate
 	if errMigrate := migrations.CheckAndCreateTables(); errMigrate != nil {

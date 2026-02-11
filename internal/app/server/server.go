@@ -6,7 +6,7 @@ import (
 	"agrigation_api/internal/middleware"
 	"agrigation_api/internal/service"
 	"agrigation_api/pkg/config"
-	"agrigation_api/pkg/logger/logger"
+	logger2 "agrigation_api/pkg/logger"
 	"context"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"net/http"
@@ -15,14 +15,14 @@ import (
 
 type Server struct {
 	Port        int
-	Logger      *logger.Log
+	Logger      logger2.MyLogger
 	Router      http.Handler
 	Postgres    *repository.Repository
 	exitChan    chan struct{}
 	connections *sync.WaitGroup
 }
 
-func NewServer(config *config.Config, logs *logger.Log, service service.Subscriptions) *Server {
+func NewServer(config *config.Config, logs logger2.MyLogger, service service.Subscriptions) *Server {
 	port := config.Port
 
 	router := http.NewServeMux()
@@ -31,6 +31,7 @@ func NewServer(config *config.Config, logs *logger.Log, service service.Subscrip
 	// Crud-операции
 	router.HandleFunc("GET /api/v1/subscriptions/", serverHandlers.GetSubscription)
 	router.HandleFunc("POST /api/v1/subscriptions/", serverHandlers.CreateSubscription)
+	router.HandleFunc("PUT /api/v1/subscriptions/", serverHandlers.UpdateSubscription)
 	router.HandleFunc("GET /api/v1/subscriptions/user/{id}", serverHandlers.ListUserSubscriptions)
 	router.HandleFunc("DELETE /api/v1/subscriptions/", serverHandlers.DeleteSubscription)
 

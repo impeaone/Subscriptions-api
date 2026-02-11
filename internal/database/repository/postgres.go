@@ -9,6 +9,7 @@ import (
 
 type Repository interface {
 	CreateSubscription(context.Context, models.CreateOrUpdateRequest) (*models.Subscription, error)
+	UpdateSubscription(context.Context, models.CreateOrUpdateRequest) (*models.Subscription, error)
 	GetSubscription(context.Context, uuid.UUID, string) (*models.Subscription, error)
 	DeleteSubscription(context.Context, uuid.UUID, string) error
 	ListUserSubscriptions(context.Context, uuid.UUID) ([]models.Subscription, error)
