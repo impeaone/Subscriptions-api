@@ -174,7 +174,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create new subscription or update existing one (upsert operation)
+      description: Create new subscription
       parameters:
       - description: Subscription data
         in: body
@@ -201,7 +201,40 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: Create or update a subscription
+      summary: Create a subscription
+      tags:
+      - subscriptions
+    put:
+      consumes:
+      - application/json
+      description: Create new subscription
+      parameters:
+      - description: Subscription data
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOrUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscription'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Update a subscription
       tags:
       - subscriptions
   /api/v1/subscriptions/total:
