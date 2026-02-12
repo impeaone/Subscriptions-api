@@ -127,7 +127,7 @@ subscription-api/
 │   ├── database/
 │   │   ├── postgres/
 │   │   |   ├── postgres.go                # Функции для работы с БД PostgreSQL
-│   │   |   └── subscriptions.go           # Кастомные ошибки от бд
+│   │   |   └── constants.go               # Кастомные ошибки от бд
 |   |   └── repository/
 │   │       └── repository.go              # Слой Repository
 │   ├── middleware/
