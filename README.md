@@ -152,6 +152,14 @@ subscription-api/
 │   │   └── models.go                      # DTO, модели входных/выходных данных
 │   └── tools/
 │       └── tools.go                       # Вспомогательные функции
+├── tests/
+│   ├── logger_test.go                     # Тесты логгера
+│   ├── repository_test.go                 # Тесты слоя `репозиторий`
+│   ├── service_test.go                    # Тесты слоя `сервис`
+│   ├── subscriptionsHandlers_test.go      # Тесты хендлеров отвечающих за подписки
+│   ├── testLogger.go                      # Тестовая структура логгера
+│   ├── testRepository.go                  # Тестовый репозиторий
+│   └── tools_test.sql                     # Тесты доп. утил
 ├── compose.yaml                           # Docker Compose конфигурация
 ├── Dockerfile                             # Dockerfile
 ├── .env                                   # Переменные окружения
