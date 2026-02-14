@@ -249,7 +249,6 @@ func (h *Handler) ListUserSubscriptions(w http.ResponseWriter, r *http.Request) 
 		"subscriptions": subscriptions,
 		"currency":      "RUB",
 	}
-
 	tools.WriteJSON(w, http.StatusOK, response)
 	h.logs.Info(fmt.Sprintf("Client: %s; EndPoint: %s; Method: %s; Time: %v; Message: User list subscription found successfully",
 		r.RemoteAddr, r.URL, r.Method, logger.TimeFormat), logger.GetPlace())

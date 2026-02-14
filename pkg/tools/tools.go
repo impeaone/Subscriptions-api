@@ -3,7 +3,6 @@ package tools
 import (
 	"agrigation_api/pkg/models"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"net/http"
 	"os"
@@ -60,7 +59,6 @@ func WriteError(w http.ResponseWriter, status int, message string) {
 // ParseMonthYear : парсим дату "MM-YYYY" -> time.Time
 func ParseMonthYear(dateStr string) (time.Time, error) {
 	t, err := time.Parse("01-2006", dateStr)
-	fmt.Println(t)
 	if err != nil {
 		return time.Time{}, err
 	}
